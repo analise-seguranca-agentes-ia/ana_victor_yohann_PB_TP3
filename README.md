@@ -1,22 +1,15 @@
-# TP2 - Projeto de Bloco: Análise e Segurança de Agentes de IA
+# TP3 - Projeto de Bloco: Análise e Segurança de Agentes de IA
 
 ## Objetivo
-TP2 do Projeto de Bloco de Análise e Segurança de Agentes de IA, continuação do 
-[TP1](https://github.com/analise-seguranca-agentes-ia/ana_victor_yohann_PB_TP1). 
-Este TP aprofunda o projeto em duas frentes:
+TP3 do Projeto de Bloco de Análise e Segurança de Agentes de IA, continuação do 
+[TP2](https://github.com/analise-seguranca-agentes-ia/ana_victor_yohann_PB_TP2.git). 
+Este TP consolida o projeto nas seguintes frentes:
 
-- **EDA completo** do Customer Support Ticket Dataset: análise univariada e 
-  multivariada, correlações, identificação de outliers e anomalias, e formulação 
-  de hipóteses validadas com testes estatísticos formais (t-test / Mann-Whitney);
-- **API FastAPI segura**: persistência em SQLite com SQLModel, controle de acesso 
-  por ownership (anti-BOLA), modelos Pydantic com `extra='forbid'`, headers HTTP 
-  de segurança, CORS com allowlist explícita, rate limiting no login e auditoria 
-  por scan passivo do OWASP ZAP.
+- **Modelagem e classificação** implementação de um modelo para prever uma variável numérica derivada, avaliado por $R^2$, $RMSE$, análise por Residual Plot e Q-Q Plot, e formalização do problema de classificação de intenções;
+- **Automação e CI/CD** desenvolvimento de uma suíte de testes com `pytest` e `TestClient` do FastAPI, configuração do pipeline automatizado com GitHub Actions para executar a suíte de testes;
+- **Auditoria ZAP e Planejamento** varredura e correção de falhas de segurança com o OWASP ZAP e elaboração do planejamento do modelo e teste adversarial (`others/planejamento_tp3.md`).
 
-O objetivo é deixar a base do sistema de atendimento ao cliente robusta, tanto 
-no entendimento dos dados quanto na segurança da API, servindo de base para o 
-modelo de ML e o agente dos próximos TPs. A API também será alvo de um pentest 
-em um TP futuro, por isso os controles do OWASP Top 10 já são aplicados agora.
+O objetivo é evoluir a inteligência do sistema e garantir a robustez e automação da API, preparando a infraestrutura para o treinamento do modelo de classificação e o teste adversarial das próximas entregas.
 
 ## Equipe
 - Ana Beatriz Rangel Mattos
