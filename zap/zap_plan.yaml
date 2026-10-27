@@ -1,4 +1,4 @@
-# Plano de automação do OWASP ZAP para o scan passivo da API do TP2.
+# Plano de automação do OWASP ZAP para o scan passivo final (auditoria) da API do TP3.
 #
 # Não há job de activeScan: o ZAP apenas analisa passivamente as requisições
 # e respostas geradas pelos jobs abaixo.
@@ -15,10 +15,14 @@
 #
 # Os IDs de prediction abaixo são os do seed em fastapi/database.db
 # (825c2c12... pertence à janedoe e 1782e213... ao johndoe).
+#
+# TP3: a rota /users (exclusiva de admin) foi incluída para que a resposta 403
+# por falta de perfil também seja analisada. Os relatórios são gravados como
+# zap_report_tp3.*, mantendo os relatórios do TP2 como histórico.
 
 env:
   contexts:
-    - name: "API TP2"
+    - name: "API TP3"
       urls:
         - "http://host.docker.internal:8000"
   parameters:
@@ -30,7 +34,7 @@ jobs:
     parameters:
       apiUrl: "http://host.docker.internal:8000/openapi.json"
       targetUrl: "http://host.docker.internal:8000"
-      context: "API TP2"
+      context: "API TP3"
 
   - type: requestor
     requests:
@@ -49,6 +53,9 @@ jobs:
       - url: "http://host.docker.internal:8000/predictions/1782e213-56fa-4830-9e36-549c246d0ec3"
         method: "GET"
         responseCode: 403
+      - url: "http://host.docker.internal:8000/users"
+        method: "GET"
+        responseCode: 403
       - url: "http://host.docker.internal:8000/predictions/predict"
         method: "POST"
         headers:
@@ -64,14 +71,14 @@ jobs:
     parameters:
       template: "traditional-html"
       reportDir: "/zap/wrk"
-      reportFile: "zap_report"
-      reportTitle: "Scan passivo OWASP ZAP - API TP2"
+      reportFile: "zap_report_tp3"
+      reportTitle: "Scan passivo OWASP ZAP - API TP3"
     risks: [info, low, medium, high]
 
   - type: report
     parameters:
       template: "traditional-json"
       reportDir: "/zap/wrk"
-      reportFile: "zap_report"
-      reportTitle: "Scan passivo OWASP ZAP - API TP2"
+      reportFile: "zap_report_tp3"
+      reportTitle: "Scan passivo OWASP ZAP - API TP3"
     risks: [info, low, medium, high]

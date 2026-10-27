@@ -28,7 +28,10 @@ credentials_exception = HTTPException(
     headers={"WWW-Authenticate": "Bearer"},
 )
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/token")
+oauth2_scheme = OAuth2PasswordBearer(
+    tokenUrl="auth/token",
+    description="Token JWT obtido em POST /auth/token. Enviado no header Authorization: Bearer <token>.",
+)
 
 
 def verify_password(input_password: str, hashed_password: str) -> bool:

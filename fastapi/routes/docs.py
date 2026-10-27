@@ -1,6 +1,7 @@
 from fastapi import APIRouter
 from fastapi.responses import HTMLResponse, Response
 
+# Correção ZAP (TP2, Finding 1 e Finding 2).
 # Página do Swagger UI servida pela própria aplicação no lugar da página padrão
 # do FastAPI, para atender aos findings do scan passivo do OWASP ZAP:
 # - os arquivos do CDN têm versão fixa e hash de integridade (SRI), então o
@@ -19,7 +20,7 @@ DOCS_HTML = f"""<!DOCTYPE html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>API TP2 - Swagger UI</title>
+<title>API TP3 - Swagger UI</title>
 <link rel="stylesheet" href="{SWAGGER_UI_CDN}/swagger-ui.css"
       integrity="{SWAGGER_CSS_SRI}" crossorigin="anonymous">
 </head>

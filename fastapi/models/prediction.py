@@ -2,6 +2,7 @@ import uuid
 from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict
+from pydantic import Field as PydanticField
 from sqlmodel import Field, SQLModel
 
 
@@ -18,10 +19,13 @@ class Prediction(SQLModel, table=True):
 class PostPredictionRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    text: str
+    text: str = PydanticField(
+        description="Texto do ticket escrito pelo cliente.",
+        examples=["I want to cancel my order and get my money back."],
+    )
 
 
 class GetPredictionResponse(BaseModel):
-    prediction_id: uuid.UUID
-    text: str
-    intention: str
+    prediction_id: uuid.UUID = PydanticField(description="Id (UUID) da prediction.")
+    text: str = PydanticField(description="Texto enviado para classificação.")
+    intention: str = PydanticField(description="Intenção prevista para o texto.")

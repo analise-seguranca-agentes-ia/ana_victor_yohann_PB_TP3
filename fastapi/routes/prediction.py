@@ -6,10 +6,11 @@ from database import get_session
 from models.prediction import (GetPredictionResponse, PostPredictionRequest,
                                Prediction)
 from models.user import User, UserRole
+from routes.responses import RESPONSE_401, RESPONSE_403_ROLE, RESPONSE_422
 from security.rbac import RoleChecker
 from sqlmodel import Session, select
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Path, status
 
 prediction_router = APIRouter(prefix="/predictions", tags=["prediction"])
 
@@ -33,6 +34,14 @@ user_intentions = [
     "/predict",
     response_model=GetPredictionResponse,
     status_code=status.HTTP_201_CREATED,
+    summary="Classifica a intenção de um texto",
+    description=(
+        "Recebe o texto do ticket, retorna a intenção prevista e grava a prediction "
+        "vinculada ao usuário autenticado (`owner_id`). Exige token JWT. "
+        "Nesta etapa a intenção ainda é sorteada (modelo simulado). "
+        "Campos além de `text` são rejeitados com 422."
+    ),
+    responses={**RESPONSE_401, **RESPONSE_403_ROLE, **RESPONSE_422},
 )
 async def predict_intention(
     text: PostPredictionRequest,
@@ -56,6 +65,12 @@ async def predict_intention(
 @prediction_router.get(
     "",
     response_model=list[GetPredictionResponse],
+    summary="Lista as predictions do usuário autenticado",
+    description=(
+        "Exige token JWT. Retorna apenas as predictions cujo `owner_id` é o do "
+        "usuário autenticado. Predictions de outros usuários nunca são listadas."
+    ),
+    responses={**RESPONSE_401, **RESPONSE_403_ROLE},
 )
 async def get_user_predictions(
     session: Session = Depends(get_session),
@@ -68,9 +83,29 @@ async def get_user_predictions(
     return predictions
 
 
-@prediction_router.get("/{id}", response_model=GetPredictionResponse)
+@prediction_router.get(
+    "/{id}",
+    response_model=GetPredictionResponse,
+    summary="Consulta uma prediction pelo id",
+    description=(
+        "Exige token JWT. Retorna a prediction somente se ela pertencer ao usuário "
+        "autenticado (controle de ownership contra BOLA)."
+    ),
+    responses={
+        **RESPONSE_401,
+        403: {
+            "description": "A prediction pertence a outro usuário, ou o usuário não tem o perfil exigido.",
+            "content": {"application/json": {"example": {"detail": "Access forbidden."}}},
+        },
+        404: {
+            "description": "Nenhuma prediction com esse id.",
+            "content": {"application/json": {"example": {"detail": "Could not find prediction"}}},
+        },
+        **RESPONSE_422,
+    },
+)
 async def get_user_prediction_by_id(
-    id: uuid.UUID,
+    id: uuid.UUID = Path(description="Id (UUID) da prediction."),
     session: Session = Depends(get_session),
     current_user: User = Depends(allow_read_prediction),
 ):

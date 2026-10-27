@@ -7,7 +7,7 @@ Este TP consolida o projeto nas seguintes frentes:
 
 - **Modelagem e classificação** implementação de um modelo para prever uma variável numérica derivada, avaliado por $R^2$, $RMSE$, análise por Residual Plot e Q-Q Plot, e formalização do problema de classificação de intenções;
 - **Automação e CI/CD** desenvolvimento de uma suíte de testes com `pytest` e `TestClient` do FastAPI, configuração do pipeline automatizado com GitHub Actions para executar a suíte de testes;
-- **Auditoria ZAP e Planejamento** varredura e correção de falhas de segurança com o OWASP ZAP e elaboração do planejamento do modelo e teste adversarial (`others/planejamento_tp3.md`).
+- **Auditoria ZAP e Planejamento** varredura e correção de falhas de segurança com o OWASP ZAP e elaboração do planejamento do modelo e teste adversarial (`others/planejamento.md`).
 
 O objetivo é evoluir a inteligência do sistema e garantir a robustez e automação da API, preparando a infraestrutura para o treinamento do modelo de classificação e o teste adversarial das próximas entregas.
 
@@ -23,42 +23,48 @@ https://www.kaggle.com/datasets/suraj520/customer-support-ticket-dataset/data
 O arquivo já está versionado neste repositório em `data/customer_support_tickets.csv`.
 A fonte, as principais características, o dicionário de dados (significado de 
 cada coluna) e o motivo da escolha do dataset estão documentados no início do 
-notebook [eda/eda.ipynb](eda/eda.ipynb).
+notebook [eda/eda_tp3.ipynb](eda/eda_tp3.ipynb).
 
 ## Estrutura de pastas
 ```
-TP2/
+ana_victor_yohann_PB_TP3/
+├── .github/
+│   └── workflows/
+│       └── pytest.yml           # CI: executa a suíte de testes a cada push e pull request
 ├── data/                        # dataset original
 │   └── customer_support_tickets.csv
 ├── eda/
-│   ├── eda.ipynb                # EDA completo, hipóteses e testes estatísticos
+│   ├── eda_tp3.ipynb            # EDA completo (TP1+TP2+TP3), regressão linear e pergunta de classificação
 │   └── requirements.txt
 ├── fastapi/
-│   ├── main.py                  # ponto de entrada + middlewares (headers, CORS, SlowAPI)
+│   ├── main.py                  # ponto de entrada + metadados do Swagger + middlewares (headers, CORS, SlowAPI)
 │   ├── database.py              # engine e sessão SQLModel
 │   ├── sqlite_database.py       # criação e população inicial do banco (sqlite3)
 │   ├── database.db              # banco SQLite com usuários e predictions de exemplo
 │   ├── limiter.py               # instância do rate limiter (SlowAPI)
 │   ├── requirements.txt
 │   ├── models/                  # tabelas SQLModel e modelos Pydantic (extra='forbid')
-│   ├── routes/                  # endpoints (auth, docs, health, prediction, user)
+│   ├── routes/                  # endpoints (auth, docs, health, prediction, user) e respostas documentadas
 │   └── security/                # JWT + OAuth2PasswordBearer e RBAC
 ├── tests/
 │   ├── conftest.py              # banco temporário e fixtures de autenticação
 │   └── test_security.py         # testes dos controles de segurança
 ├── zap/
 │   ├── zap_plan.yaml            # plano de automação do scan passivo
-│   ├── zap_report_inicial.html  # relatório do scan antes das correções (+ .json)
-│   ├── zap_report.html          # relatório do scan final, após as correções (+ .json)
-│   └── scan_passivo_zap.md      # análise dos findings Medium e High
+│   ├── zap_report_tp3.html      # relatório da auditoria final do TP3 (+ .json)
+│   ├── scan_passivo_zap_tp3.md  # documentação da auditoria final do TP3
+│   ├── zap_report_inicial.html  # histórico do TP2: scan antes das correções (+ .json)
+│   ├── zap_report.html          # histórico do TP2: scan após as correções (+ .json)
+│   └── scan_passivo_zap.md      # histórico do TP2: análise dos findings Medium
 ├── others/
 │   ├── dfd.png                  # DFD com trust boundaries e tríade CIA
-│   └── dfd-cia.md               # descrição do DFD e análise CIA
+│   ├── dfd-cia.md               # descrição do DFD e análise CIA
+│   └── planejamento.md          # algoritmo candidato, CountVectorizer e URL pública da API
 └── README.md
 ```
 
 ## Pré-requisitos
-- Python 3.10 ou superior (o código utiliza unions do tipo `str | None`)
+- Python 3.12 ou superior (versão usada no CI; algumas dependências fixadas em `fastapi/requirements.txt` não instalam em versões anteriores)
 - `pip`
 - [Docker](https://www.docker.com/) (apenas para reproduzir o scan do OWASP ZAP)
 
@@ -88,6 +94,7 @@ pip install -r requirements.txt
 - matplotlib: Geração dos gráficos;
 - seaborn: Visualizações estatísticas;
 - scipy: Testes de hipótese (t-test / Mann-Whitney);
+- scikit-learn: Regressão linear, validação cruzada e teste preliminar de classificação;
 - jupyter: Execução do notebook.
 
 ### Etapas do EDA
@@ -104,6 +111,10 @@ dicionário de dados e motivo da escolha) e segue as etapas do enunciado:
    (Mann-Whitney / t-test de Welch)
 7. Identificação de outliers e anomalias
 8. Documentação do EDA e conclusões
+9. Regressão linear (seção 2), com R², RMSE, validação cruzada, residual plot, 
+   QQ plot e a justificativa de por que a regressão não representa o problema
+10. Pergunta de classificação (seção 3), com a distribuição das classes do 
+    `Ticket Type` e um teste preliminar de separabilidade do texto
 
 O notebook já está versionado com as saídas, então dá para ler os resultados 
 sem executá-lo.
@@ -115,10 +126,10 @@ Inicie o Jupyter com:
 
 ```bash
 cd eda
-jupyter notebook eda.ipynb
+jupyter notebook eda_tp3.ipynb
 ```
 
-Ou, se preferir, abra o arquivo `eda/eda.ipynb` diretamente no VS Code (com as 
+Ou, se preferir, abra o arquivo `eda/eda_tp3.ipynb` diretamente no VS Code (com as 
 extensões *Python* e *Jupyter* instaladas) e execute as células por lá.
 
 Em ambos os casos o notebook roda a partir do diretório `eda/`, o que é 
@@ -215,6 +226,9 @@ No Linux/macOS, use `python3` caso `python` não esteja disponível.
 - **API URL:** `http://127.0.0.1:8000`
 - **Documentação Swagger:** `http://127.0.0.1:8000/docs`
 
+O Swagger descreve cada rota (resumo, descrição, parâmetros, exemplos e todas as 
+respostas de erro possíveis) e explica como obter e usar o token JWT.
+
 ### Rotas
 
 | Método | Rota | Protegida | Descrição |
@@ -300,12 +314,21 @@ Os testes estão em [tests/test_security.py](tests/test_security.py):
 | `test_reject_extra_fields_in_request_body` | Envio do campo extra `role` no body de `POST /predictions/predict` | `422 Unprocessable Entity` com erro do tipo `extra_forbidden` no campo `role` |
 | `test_rate_limit_on_auth_token` | 11 tentativas de login com senha errada em sequência (simulação de brute force) | `401` nas 10 primeiras e `429 Too Many Requests` na 11ª |
 
-## OWASP ZAP - Scan passivo
+## Integração contínua (GitHub Actions)
 
-A API foi auditada com um scan **passivo** do OWASP ZAP, executado via Docker com 
-o plano de automação [zap/zap_plan.yaml](zap/zap_plan.yaml). O plano importa o 
-`/openapi.json`, requisita a página `/docs` e as rotas protegidas e exporta os 
-relatórios, sem nenhum job de scan ativo.
+O workflow [.github/workflows/pytest.yml](.github/workflows/pytest.yml) executa a 
+suíte de testes a cada `push` e `pull request` para a branch `main`. Ele faz o 
+checkout do repositório, configura o Python 3.12, instala as dependências de 
+`fastapi/requirements.txt` e roda `pytest tests -v`. Se algum teste falhar, a 
+execução é marcada como falha na aba **Actions** do GitHub.
+
+## OWASP ZAP - Auditoria final (TP3)
+
+A API foi auditada com um scan **passivo** do OWASP ZAP 2.17.0, executado via 
+Docker com o plano de automação [zap/zap_plan.yaml](zap/zap_plan.yaml). O plano 
+importa o `/openapi.json`, requisita a página `/docs` e as rotas protegidas 
+(incluindo `/users`, exclusiva de admin) e exporta os relatórios, sem nenhum job 
+de scan ativo.
 
 Para reproduzir (Git Bash, a partir da raiz do projeto), suba a API aceitando 
 conexões do container:
@@ -315,26 +338,40 @@ uvicorn main:app --app-dir fastapi --host 0.0.0.0 --port 8000
 ```
 
 Em outro terminal, gere um token e execute o ZAP. O token é enviado em todas as 
-requisições, para que o ZAP também analise as respostas das rotas protegidas:
+requisições, para que o ZAP também analise as respostas das rotas protegidas. A 
+variável `MSYS_NO_PATHCONV=1` impede que o Git Bash converta o caminho do plano 
+para um caminho do Windows:
 
 ```bash
 TOKEN=$(curl -s -X POST http://127.0.0.1:8000/auth/token -d "username=janedoe&password=janedoe123" | python -c "import sys,json;print(json.load(sys.stdin)['access_token'])")
 
-docker run --rm \
+MSYS_NO_PATHCONV=1 docker run --rm \
   -e ZAP_AUTH_HEADER_VALUE="Bearer $TOKEN" \
   -e ZAP_AUTH_HEADER_SITE="host.docker.internal" \
   -v "$(pwd -W)/zap:/zap/wrk:rw" \
   ghcr.io/zaproxy/zaproxy:stable zap.sh -cmd -autorun /zap/wrk/zap_plan.yaml
 ```
 
-Os relatórios são gerados em `zap/zap_report.html` e `zap/zap_report.json`. O 
-scan cria registros de exemplo no banco, então restaure-o depois com 
+Os relatórios são gerados em `zap/zap_report_tp3.html` e `zap/zap_report_tp3.json`. 
+O scan cria registros de exemplo no banco, então pare a API e restaure-o depois com 
 `git restore fastapi/database.db`.
 
-O primeiro scan encontrou dois findings **Medium** (CSP ausente e SRI ausente 
-no Swagger), que foram corrigidos. O scan final não tem findings Medium nem High. 
-A análise completa de cada finding (severidade, confiança, URL afetada, correção e 
-validação) está em [zap/scan_passivo_zap.md](zap/scan_passivo_zap.md).
+**A auditoria final não tem nenhum finding Medium ou High**, apenas dois findings 
+Informational. Os dois findings Medium encontrados no TP2 (CSP ausente e SRI 
+ausente no Swagger) continuam corrigidos, e os trechos do código onde foram 
+corrigidos estão marcados com comentários `Correção ZAP`. A documentação completa 
+(finding, severidade, risco, correção, onde está no código e evidência) está em 
+[zap/scan_passivo_zap_tp3.md](zap/scan_passivo_zap_tp3.md). Os relatórios e a 
+análise do TP2 foram mantidos na pasta `zap/` como histórico.
+
+## Planejamento e URL pública
+
+O arquivo [others/planejamento.md](others/planejamento.md) registra o planejamento 
+da fase preditiva. Ele define a regressão logística como algoritmo candidato, 
+justifica a representação do texto com `CountVectorizer`, documenta o risco 
+encontrado no teste preliminar (o texto da descrição não separou as classes) e 
+informa a URL pública da API, gerada com Cloudflare Tunnel, que é o alvo 
+autorizado para o pentest dos TP4 e TP5.
 
 ## DFD e Tríade CIA
 
@@ -345,4 +382,3 @@ CIA de cada componente indicada no próprio diagrama, está em
 A descrição dos componentes, dos fluxos, das trust boundaries, a justificativa 
 da classificação CIA, as fragilidades e os controles implementados estão em 
 [others/dfd-cia.md](others/dfd-cia.md).
-

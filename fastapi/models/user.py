@@ -2,6 +2,7 @@ import uuid
 from enum import Enum
 
 from pydantic import BaseModel, ConfigDict, EmailStr
+from pydantic import Field as PydanticField
 from sqlmodel import JSON, Column, Field, SQLModel
 
 UserRole = Enum("UserRole", [("DEFAULT", 0), ("ADMIN", 1)])
@@ -23,9 +24,9 @@ class User(SQLModel, table=True):
 
 
 class GetUserResponse(BaseModel):
-    username: str
-    email: EmailStr | None = None
-    full_name: str | None
+    username: str = PydanticField(description="Nome de usuário usado no login.")
+    email: EmailStr | None = PydanticField(default=None, description="E-mail do usuário.")
+    full_name: str | None = PydanticField(description="Nome completo do usuário.")
 
 
 class PostUserLoginRequest(BaseModel):
@@ -38,5 +39,5 @@ class PostUserLoginRequest(BaseModel):
 class PostUserRegisterRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    username: str
-    password: str
+    username: str = PydanticField(description="Nome de usuário único.", examples=["mariasilva"])
+    password: str = PydanticField(description="Senha em texto puro. É armazenada apenas como hash.", examples=["senha-forte-123"])

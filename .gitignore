@@ -15,3 +15,4 @@ venv/
 
 # Database (o banco oficial fica em fastapi/database.db e deve ser versionado)
 /database.db
+.pytest_cache/

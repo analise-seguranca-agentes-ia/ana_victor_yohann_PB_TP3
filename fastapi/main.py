@@ -21,15 +21,48 @@ from sqlmodel import SQLModel
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 
-# As páginas padrão de documentação são desativadas: o /docs é servido por
-# routes/docs.py (com SRI e sem script inline) e o /redoc não é utilizado.
-app = FastAPI(docs_url=None, redoc_url=None)
+API_DESCRIPTION = """
+API do Projeto de Bloco (TP3) que recebe o texto de um ticket de suporte e
+retorna a intenção do cliente (`Ticket Type`).
+
+**Autenticação.** As rotas de predictions e de usuários exigem um token JWT.
+Para obter o token, use o botão **Authorize** com usuário e senha ou chame
+`POST /auth/token`. O token expira em 30 minutos.
+
+**Limites.** O `POST /auth/token` aceita no máximo 10 requisições por minuto
+por cliente. Acima disso a API responde 429.
+
+**Observação.** Nesta etapa o modelo ainda é simulado: a intenção retornada
+pelo `POST /predictions/predict` é sorteada. O modelo de classificação real
+será integrado no TP4.
+"""
+
+OPENAPI_TAGS = [
+    {"name": "auth", "description": "Cadastro de usuários e emissão do token JWT."},
+    {"name": "prediction", "description": "Classificação de intenções e consulta das predictions do usuário autenticado."},
+    {"name": "User", "description": "Consulta de usuários. Exclusivo para administradores."},
+    {"name": "health", "description": "Verificação de disponibilidade da API."},
+]
+
+# Correção ZAP (TP2, Finding 1 e Finding 2): as páginas padrão de documentação
+# são desativadas. O /docs é servido por routes/docs.py, com SRI e sem script
+# inline, e o /redoc, que não é utilizado, fica desligado.
+app = FastAPI(
+    title="API de Classificação de Intenções - TP3",
+    description=API_DESCRIPTION,
+    version="3.0.0",
+    openapi_tags=OPENAPI_TAGS,
+    docs_url=None,
+    redoc_url=None,
+)
 
 SQLModel.metadata.create_all(engine)
 
+# Correção ZAP (TP2, Finding 1, "Content Security Policy (CSP) Header Not Set").
 # A API só responde JSON, então a política padrão bloqueia qualquer conteúdo.
 API_CSP = "default-src 'none'; frame-ancestors 'none'; form-action 'none'; base-uri 'none'"
 
+# Correção ZAP (TP2, Finding 1 e Finding 2).
 # O /docs precisa carregar o Swagger UI do CDN (com SRI), o script de
 # inicialização da própria API e buscar o /openapi.json.
 DOCS_CSP = (
@@ -67,6 +100,8 @@ async def security_headers(request: Request, call_next):
         "max-age=31536000; includeSubDomains"
     )
     response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    # Correção ZAP (TP2, Finding 1): CSP enviado em todas as respostas, com
+    # uma política mais restrita para a API e outra para o Swagger UI.
     response.headers["Content-Security-Policy"] = (
         DOCS_CSP if request.url.path.startswith("/docs") else API_CSP
     )
